@@ -1,37 +1,46 @@
 const express = require("express");
-const axios = require("axios");
+const TelegramBot = require("node-telegram-bot-api");
 
 const app = express();
-app.use(express.json());
 
-// 🔐 COLOCA AQUI OS TEUS DADOS
-const TELEGRAM_TOKEN = "SEU_TOKEN_DO_BOT";
-const CHAT_ID = "SEU_CHAT_ID";
+app.use(express.json()); // 🔥 IMPORTANTE
 
-// 📩 FUNÇÃO QUE ENVIA PARA TELEGRAM
-async function sendTelegram(msg) {
-  await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    chat_id: CHAT_ID,
-    text: msg,
-  });
-}
+const token = process.env.BOT_TOKEN;
+const chatId = process.env.CHAT_ID;
 
-// ⚽ WEBHOOK DO FOOTBALL STUDIO
-app.post("/webhook", async (req, res) => {
-  const event = req.body;
+const bot = new TelegramBot(token, { polling: false });
 
-  if (event.type === "entrada_confirmada") {
-    console.log("Entrada confirmada ✔️");
-
-    await sendTelegram(
-      `⚽ Entrada confirmada!\nJogo: ${event.jogo}\nOdds: ${event.odds}`
-    );
-  }
-
-  res.sendStatus(200);
+// 🌍 teste servidor
+app.get("/", (req, res) => {
+  res.send("BOT ONLINE OK");
 });
 
-// 🚀 LIGAR SERVIDOR
-app.listen(3000, () => {
-  console.log("Servidor a correr na porta 3000");
+// 🚀 enviar mensagem manual
+app.get("/send", async (req, res) => {
+  try {
+    await bot.sendMessage(chatId, "🚀 SINAL TESTE FOOTBALL STUDIO");
+    res.send("Mensagem enviada!");
+  } catch (error) {
+    res.send(error.message);
+  }
+});
+
+// 🔥 WEBHOOK DO TELEGRAM (FALTAVA ISTO)
+app.post("/webhook", async (req, res) => {
+  try {
+    const update = req.body;
+
+    console.log("Update recebido:", update);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor a correr na porta " + PORT);
 });
