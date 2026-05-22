@@ -17,7 +17,7 @@ app.post("/signal", async (req, res) => {
 
   const { entrada, protecao } = req.body;
 
-  const chatId = "COLOCA_AQUI_O_CHAT_ID";
+  const chatId = "6942730957";
 
   await bot.sendMessage(chatId,
 `⚽ FOOTBALL STUDIO VIP
