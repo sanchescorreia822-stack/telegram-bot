@@ -11,10 +11,8 @@ const bot = new TelegramBot(token, { polling: false });
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
-
 app.post("/signal", async (req, res) => {
-  const { entrada, protecao } = req.body || {};
-
+  console.log("REQUEST RECEBIDO:", req.body);
   const chatId = process.env.CHAT_ID; // melhor usar env
 
   try {
