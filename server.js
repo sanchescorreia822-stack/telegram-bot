@@ -13,42 +13,20 @@ app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
 
-app.post("/webhook", async (req, res) => {
+app.post("/signal", async (req, res) => {
 
-  const msg = req.body.message;
+  const { entrada, protecao } = req.body;
 
-  if (msg && msg.text) {
+  const chatId = "COLOCA_AQUI_O_CHAT_ID";
 
-    const chatId = msg.chat.id;
-    const text = msg.text.toLowerCase();
-
-    if (text === "/start") {
-
-      await bot.sendMessage(chatId,
+  await bot.sendMessage(chatId,
 `⚽ FOOTBALL STUDIO VIP
 
-🤖 Bot Online 24H
-📊 Sinais automáticos
-🔥 Bem-vindo ao canal VIP`
-      );
+🎯 ENTRADA: ${entrada}
+🛡️ PROTEÇÃO: ${protecao}
 
-    } else if (text === "sinal") {
-
-      await bot.sendMessage(chatId,
-`⚽ FOOTBALL STUDIO SIGNAL
-
-🔴 ENTRADA: PLAYER
-🟢 PROTEÇÃO: BANKER
-
-⏰ Aguarde o próximo round`
-      );
-
-    } else {
-
-      await bot.sendMessage(chatId,
-"✅ Comando recebido");
-    }
-  }
+🔥 SINAL AUTOMÁTICO`
+  );
 
   res.sendStatus(200);
 });
