@@ -1,4 +1,20 @@
+const express = require("express");
+const TelegramBot = require("node-telegram-bot-api");
+
+const app = express();
+
+app.use(express.json());
+
+const token = process.env.BOT_TOKEN;
+
+const bot = new TelegramBot(token);
+
+app.get("/", (req, res) => {
+  res.send("Football Studio Bot Online ✅");
+});
+
 app.post("/webhook", async (req, res) => {
+
   const msg = req.body.message;
 
   if (msg && msg.text) {
@@ -35,4 +51,10 @@ app.post("/webhook", async (req, res) => {
   }
 
   res.sendStatus(200);
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor online na porta ${PORT}`);
 });
