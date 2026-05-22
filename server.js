@@ -6,29 +6,33 @@ const app = express();
 app.use(express.json());
 
 const token = process.env.BOT_TOKEN;
-
-const bot = new TelegramBot(token);
+const bot = new TelegramBot(token, { polling: false });
 
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
 
 app.post("/signal", async (req, res) => {
+  const { entrada, protecao } = req.body || {};
 
-  const { entrada, protecao } = req.body;
+  const chatId = process.env.CHAT_ID; // melhor usar env
 
-  const chatId = "6942730957";
-
-  await bot.sendMessage(chatId,
+  try {
+    await bot.sendMessage(
+      chatId,
 `⚽ FOOTBALL STUDIO VIP
 
 🎯 ENTRADA: ${entrada}
 🛡️ PROTEÇÃO: ${protecao}
 
 🔥 SINAL AUTOMÁTICO`
-  );
+    );
 
-  res.sendStatus(200);
+    res.sendStatus(200);
+  } catch (error) {
+    console.log("Erro ao enviar mensagem:", error);
+    res.sendStatus(500);
+  }
 });
 
 const PORT = process.env.PORT || 3000;
