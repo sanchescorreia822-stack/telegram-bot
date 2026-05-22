@@ -3,19 +3,17 @@ const TelegramBot = require("node-telegram-bot-api");
 
 const app = express();
 
-app.use(express.json()); // 🔥 IMPORTANTE
+app.use(express.json()); // 👈 aqui em cima
 
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
 
 const bot = new TelegramBot(token, { polling: false });
 
-// 🌍 teste servidor
 app.get("/", (req, res) => {
-  res.send("BOT ONLINE OK");
+  res.send("FOOTBALL STUDIO BOT ONLINE OK");
 });
 
-// 🚀 enviar mensagem manual
 app.get("/send", async (req, res) => {
   try {
     await bot.sendMessage(chatId, "🚀 SINAL TESTE FOOTBALL STUDIO");
@@ -25,20 +23,20 @@ app.get("/send", async (req, res) => {
   }
 });
 
-// 🔥 WEBHOOK DO TELEGRAM (FALTAVA ISTO)
+// 🔥 AQUI É ONDE TU COLOCAS O WEBHOOK
 app.post("/webhook", async (req, res) => {
-  try {
-    const update = req.body;
+  const msg = req.body.message;
 
-    console.log("Update recebido:", update);
+  if (msg && msg.text) {
+    const chatId = msg.chat.id;
 
-    res.sendStatus(200);
-  } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
+    await bot.sendMessage(chatId, "📊 SINAL FOOTBALL STUDIO RECEBIDO");
   }
+
+  res.sendStatus(200);
 });
 
+// 👇 SEMPRE NO FINAL
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
