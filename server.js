@@ -2,42 +2,24 @@ const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
 
 const app = express();
-
 app.use(express.json());
 
-const token = process.env.BOT_TOKEN;
-const bot = new TelegramBot(token, { polling: false });
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
+const chatId = process.env.CHAT_ID;
 
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
 
 app.post("/signal", async (req, res) => {
-  console.log("REQUEST RECEBIDO:", req.body);
-
-  const { entrada, protecao } = req.body;
-  const chatId = process.env.CHAT_ID;
-
   try {
-    await bot.sendMessage(
-      chatId,
-`⚽ FOOTBALL STUDIO VIP
-
-🎯 ENTRADA: ${entrada}
-🛡️ PROTEÇÃO: ${protecao}
-
-🔥 SINAL AUTOMÁTICO`
-    );
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.log("Erro ao enviar mensagem:", error);
-    res.sendStatus(500);
+    await bot.sendMessage(chatId, "⚽ SINAL RECEBIDO");
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("erro");
   }
 });
 
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(\`Servidor online na porta ${PORT}\`);
-});
+app.listen(PORT, () => console.log(`Servidor online na porta ${PORT}`));
