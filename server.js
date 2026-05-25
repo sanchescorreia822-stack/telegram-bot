@@ -11,9 +11,12 @@ const bot = new TelegramBot(token, { polling: false });
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
+
 app.post("/signal", async (req, res) => {
   console.log("REQUEST RECEBIDO:", req.body);
-  const chatId = process.env.CHAT_ID; // melhor usar env
+
+  const { entrada, protecao } = req.body;
+  const chatId = process.env.CHAT_ID;
 
   try {
     await bot.sendMessage(
@@ -36,5 +39,5 @@ app.post("/signal", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor online na porta ${PORT}`);
+  console.log(\`Servidor online na porta ${PORT}\`);
 });
