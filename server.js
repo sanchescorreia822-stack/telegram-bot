@@ -14,15 +14,13 @@ app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
 
-app.post("/signal", async (req, res) => {
-  try {
-    await bot.sendMessage(chatId, "⚽ SINAL RECEBIDO");
-    res.status(200).send("ok");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("erro");
-  }
-});
+app.post("/signal", (req, res) => {
+  console.log("SIGNAL RECEBIDO:", req.body);
 
+  res.status(200).json({
+    ok: true,
+    message: "Signal recebido"
+  });
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor online na porta ${PORT}`));
