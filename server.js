@@ -14,18 +14,35 @@ app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
 app.post("/signal", async (req, res) => {
-  const { entrada, protecao } = req.body;
+  const { entrada, protecao, gale, resultado } = req.body;
+
+  let mensagem = `⚽ FOOTBALL STUDIO ⚽
+
+🎯 Entrada: ${entrada}
+🛡️ Proteção: ${protecao}`;
+
+  if (gale) {
+    mensagem += `
+
+🔁 Gale: ${gale}`;
+  }
+
+  if (resultado) {
+    mensagem += `
+
+📢 Resultado: ${resultado}`;
+  }
+
+  mensagem += `
+
+⏰ ${new Date().toLocaleTimeString("pt-PT")}`;
 
   try {
-    await bot.sendMessage(
-      chatId,
-      `📊 SINAL FOOTBALL STUDIO\n\nEntrada: ${entrada}\nProteção: ${protecao}`
-    );
-
-    res.status(200).send("Sinal enviado para Telegram ✅");
+    await bot.sendMessage(chatId, mensagem);
+    res.status(200).send("Sinal enviado ✅");
   } catch (error) {
     console.log("ERRO TELEGRAM:", error.message);
-    res.status(500).send("Erro ao enviar mensagem");
+    res.status(500).send("Erro");
   }
 });
 const PORT = process.env.PORT || 3000;
