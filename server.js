@@ -10,6 +10,9 @@ app.use(express.json());
 const bot = new TelegramBot(process.env.BOT_TOKEN || "", { polling: false });
 const chatId = process.env.CHAT_ID || "";
 
+app.get("/", (req, res) => {
+  res.send("Football Studio Bot Online ✅");
+});
 app.post("/signal", async (req, res) => {
   const { entrada, protecao } = req.body;
 
