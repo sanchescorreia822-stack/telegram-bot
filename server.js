@@ -1,44 +1,66 @@
 const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
 
-// 🔑 CONFIGURAÇÃO
+// 🔑 CONFIG
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
 
 const bot = new TelegramBot(token, { polling: false });
 
-// 🔥 CONTROLO DO BOT
+// 🔥 CONTROLO
 let ativo = true;
 
-// 📊 IA SIMPLES
+// 📦 HISTÓRICO
+const FILE = "historico.json";
+
+function guardarHistorico(sinal, jogo) {
+  let data = [];
+
+  if (fs.existsSync(FILE)) {
+    data = JSON.parse(fs.readFileSync(FILE));
+  }
+
+  data.push({
+    sinal,
+    jogo,
+    hora: new Date()
+  });
+
+  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+}
+
+// 🧠 IA MELHORADA
 function escolherSinal(oddHome, oddAway) {
   const home = 1 / oddHome;
   const away = 1 / oddAway;
 
-  if (Math.abs(home - away) < 0.05) {
+  const diferenca = Math.abs(home - away);
+
+  if (diferenca < 0.03) {
     return "📊 SEM SINAL (RISCO ALTO)";
   }
 
   return home > away
-    ? "📊 SINAL: CASA FORTE"
-    : "📊 SINAL: FORA FORTE";
+    ? "📊 IA FORTE: CASA"
+    : "📊 IA FORTE: FORA";
 }
 
-// 🚫 EVITAR SPAM
+// 🚫 ANTI-SPAM
 let ultimoSinal = "";
 
-function enviarMensagem(msg) {
+function enviar(msg) {
   if (msg === ultimoSinal) return;
 
   ultimoSinal = msg;
   bot.sendMessage(chatId, msg);
 }
 
-// 🌐 API DE ODDS
+// 🌐 API ODDS
 async function buscarOdds() {
   try {
     const res = await axios.get(
@@ -73,7 +95,10 @@ async function buscarOdds() {
 
         const sinal = escolherSinal(oddHome, oddAway);
 
-        enviarMensagem(`${sinal}\n⚽ ${home} vs ${away}`);
+        const msg = `${sinal}\n⚽ ${home} vs ${away}`;
+
+        enviar(msg);
+        guardarHistorico(sinal, `${home} vs ${away}`);
 
       } catch (err) {
         console.log("Erro jogo:", err.message);
@@ -85,43 +110,65 @@ async function buscarOdds() {
   }
 }
 
-// ⏰ LOOP AUTOMÁTICO
+// ⏰ LOOP
 setInterval(() => {
   if (!ativo) return;
+  buscarOdds().catch(err => console.log(err.message));
+}, 300000);
 
-  buscarOdds().catch(err => {
-    console.log("Retry erro:", err.message);
-  });
+// 🤖 BOTÕES TELEGRAM
+const menu = {
+  reply_markup: {
+    inline_keyboard: [
+      [
+        { text: "🟢 LIGAR BOT", callback_data: "start" },
+        { text: "🔴 DESLIGAR BOT", callback_data: "stop" }
+      ]
+    ]
+  }
+};
 
-}, 300000); // 5 minutos
-
-// 🤖 TELEGRAM CONTROLO
-bot.onText(/\/startbot/, () => {
-  ativo = true;
-  bot.sendMessage(chatId, "🟢 Bot LIGADO");
+bot.onText(/\/menu/, (msg) => {
+  bot.sendMessage(chatId, "⚙️ CONTROLO DO BOT", menu);
 });
 
-bot.onText(/\/stopbot/, () => {
-  ativo = false;
-  bot.sendMessage(chatId, "🔴 Bot DESLIGADO");
+bot.on("callback_query", (query) => {
+  const action = query.data;
+
+  if (action === "start") {
+    ativo = true;
+    bot.sendMessage(chatId, "🟢 BOT LIGADO");
+  }
+
+  if (action === "stop") {
+    ativo = false;
+    bot.sendMessage(chatId, "🔴 BOT DESLIGADO");
+  }
 });
 
-// 🌐 ROTAS
+// 🌐 WEB
 app.get("/", (req, res) => {
   res.send("Football Bot Online ✅");
 });
 
 // 📊 PAINEL
 app.get("/panel", (req, res) => {
+  let data = [];
+
+  if (fs.existsSync(FILE)) {
+    data = JSON.parse(fs.readFileSync(FILE));
+  }
+
   res.send(`
-    <h1>📊 PAINEL DO BOT</h1>
+    <h1>📊 PAINEL PRO</h1>
     <p>Status: ${ativo ? "ON 🟢" : "OFF 🔴"}</p>
+    <p>Total sinais: ${data.length}</p>
+    <p>Último: ${data[data.length - 1]?.sinal || "nenhum"}</p>
   `);
 });
 
-// 🚀 START SERVER
+// 🚀 START
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log("🚀 Bot a correr na porta " + PORT);
+  console.log("🚀 Bot online na porta " + PORT);
 });
