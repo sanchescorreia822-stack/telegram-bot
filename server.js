@@ -26,11 +26,21 @@ setInterval(() => {
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
+app.post("/api/data", (req, res) => {
+  const { oddAzul, oddVermelho } = req.body;
 
-app.post("/signal", (req, res) => {
+  let sinal = "";
+
+  if (oddAzul < oddVermelho) {
+    sinal = "📊 SINAL BASEADO EM ODDS: AZUL";
+  } else {
+    sinal = "📊 SINAL BASEADO EM ODDS: VERMELHO";
+  }
+
+  bot.sendMessage(chatId, sinal);
+
   res.sendStatus(200);
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Bot a correr na porta " + PORT);
