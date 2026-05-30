@@ -8,11 +8,10 @@ app.use(express.json());
 // 🔑 CONFIGURAÇÃO
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
-const apiKey = process.env.ODDS_API_KEY;
 
 const bot = new TelegramBot(token, { polling: false });
 
-// 🔥 LIGA/DESLIGA BOT
+// 🔥 CONTROLO DO BOT
 let ativo = true;
 
 // 📊 IA SIMPLES
@@ -29,41 +28,56 @@ function escolherSinal(oddHome, oddAway) {
     : "📊 SINAL: FORA FORTE";
 }
 
-// 🌐 API ODDS
+// 🚫 EVITAR SPAM
+let ultimoSinal = "";
+
+function enviarMensagem(msg) {
+  if (msg === ultimoSinal) return;
+
+  ultimoSinal = msg;
+  bot.sendMessage(chatId, msg);
+}
+
+// 🌐 API DE ODDS
 async function buscarOdds() {
   try {
     const res = await axios.get(
       "https://api.the-odds-api.com/v4/sports/soccer/odds",
       {
         params: {
-          apiKey: apiKey,
+          apiKey: process.env.ODDS_API_KEY,
           regions: "eu",
           markets: "h2h"
-        }
+        },
+        timeout: 10000
       }
     );
 
     const jogos = res.data;
 
+    if (!Array.isArray(jogos)) return;
+
     jogos.forEach(jogo => {
-      const home = jogo.home_team;
-      const away = jogo.away_team;
+      try {
+        const home = jogo.home_team;
+        const away = jogo.away_team;
 
-      const book = jogo.bookmakers?.[0];
-      if (!book) return;
+        const book = jogo.bookmakers?.[0];
+        const market = book?.markets?.[0];
+        const odds = market?.outcomes;
 
-      const market = book.markets?.[0];
-      if (!market) return;
+        if (!odds || odds.length < 2) return;
 
-      const odds = market.outcomes;
-      if (!odds) return;
+        const oddHome = odds[0].price;
+        const oddAway = odds[1].price;
 
-      const oddHome = odds[0].price;
-      const oddAway = odds[1].price;
+        const sinal = escolherSinal(oddHome, oddAway);
 
-      const sinal = escolherSinal(oddHome, oddAway);
+        enviarMensagem(`${sinal}\n⚽ ${home} vs ${away}`);
 
-      bot.sendMessage(chatId, `${sinal}\n⚽ ${home} vs ${away}`);
+      } catch (err) {
+        console.log("Erro jogo:", err.message);
+      }
     });
 
   } catch (err) {
@@ -71,13 +85,17 @@ async function buscarOdds() {
   }
 }
 
-// 🔁 AUTOMÁTICO
+// ⏰ LOOP AUTOMÁTICO
 setInterval(() => {
   if (!ativo) return;
-  buscarOdds();
-}, 300000); // 5 min
 
-// 🤖 COMANDOS TELEGRAM
+  buscarOdds().catch(err => {
+    console.log("Retry erro:", err.message);
+  });
+
+}, 300000); // 5 minutos
+
+// 🤖 TELEGRAM CONTROLO
 bot.onText(/\/startbot/, () => {
   ativo = true;
   bot.sendMessage(chatId, "🟢 Bot LIGADO");
@@ -88,7 +106,7 @@ bot.onText(/\/stopbot/, () => {
   bot.sendMessage(chatId, "🔴 Bot DESLIGADO");
 });
 
-// 🌐 WEB
+// 🌐 ROTAS
 app.get("/", (req, res) => {
   res.send("Football Bot Online ✅");
 });
@@ -96,13 +114,14 @@ app.get("/", (req, res) => {
 // 📊 PAINEL
 app.get("/panel", (req, res) => {
   res.send(`
-    <h1>📊 BOT PAINEL</h1>
-    <p>Status: ${ativo ? "ON" : "OFF"}</p>
+    <h1>📊 PAINEL DO BOT</h1>
+    <p>Status: ${ativo ? "ON 🟢" : "OFF 🔴"}</p>
   `);
 });
 
-// 🚀 START
+// 🚀 START SERVER
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log("Bot a correr na porta " + PORT);
+  console.log("🚀 Bot a correr na porta " + PORT);
 });
