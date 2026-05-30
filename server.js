@@ -1,43 +1,37 @@
 const express = require("express");
-const cors = require("cors");
 const TelegramBot = require("node-telegram-bot-api");
 
 const app = express();
-
-app.use(cors());
 app.use(express.json());
 
-const bot = new TelegramBot(process.env.BOT_TOKEN || "", { polling: false });
-const chatId = process.env.CHAT_ID || "";
+const token = process.env.BOT_TOKEN;
+const chatId = process.env.CHAT_ID;
 
+const bot = new TelegramBot(token, { polling: false });
+
+/* 👇 AQUI É O LUGAR CERTO (FORA DAS ROTAS) */
+setInterval(() => {
+  const sinais = [
+    "📊 SINAL AUTOMÁTICO: AZUL",
+    "📊 SINAL AUTOMÁTICO: VERMELHO",
+    "📊 SINAL AUTOMÁTICO: EMPATE"
+  ];
+
+  const random = sinais[Math.floor(Math.random() * sinais.length)];
+
+  bot.sendMessage(chatId, random);
+}, 60000);
+
+/* ROTAS NORMALMENTE EM BAIXO */
 app.get("/", (req, res) => {
   res.send("Football Studio Bot Online ✅");
 });
-app.post("/signal", async (req, res) => {
-  try {
-    const { entrada, protecao, gale, resultado } = req.body;
 
-    let mensagem =
-`⚽ FOOTBALL STUDIO ⚽
-
-🎯 Entrada: ${entrada}
-🛡️ Proteção: ${protecao}`;
-
-    if (gale) {
-      mensagem += `\n🔁 ${gale}`;
-    }
-
-    if (resultado) {
-      mensagem += `\n\n📢 Resultado: ${resultado}`;
-    }
-
-    await bot.sendMessage(chatId, mensagem);
-    res.status(200).send("ok");
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("erro");
-  }
+app.post("/signal", (req, res) => {
+  res.sendStatus(200);
 });
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor online na porta ${PORT}`));
+app.listen(PORT, () => {
+  console.log("Bot a correr na porta " + PORT);
+});
