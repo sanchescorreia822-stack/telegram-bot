@@ -10,18 +10,20 @@ app.use(express.json());
 const bot = new TelegramBot(process.env.BOT_TOKEN || "", { polling: false });
 const chatId = process.env.CHAT_ID || "";
 
-app.get("/", (req, res) => {
-  res.send("Football Studio Bot Online ✅");
+app.post("/signal", async (req, res) => {
+  const { entrada, protecao } = req.body;
+
+  try {
+    await bot.sendMessage(
+      chatId,
+      `📊 SINAL FOOTBALL STUDIO\n\nEntrada: ${entrada}\nProteção: ${protecao}`
+    );
+
+    res.status(200).send("Sinal enviado para Telegram ✅");
+  } catch (error) {
+    console.log("ERRO TELEGRAM:", error.message);
+    res.status(500).send("Erro ao enviar mensagem");
+  }
 });
-
-app.post("/signal", (req, res) => {
-  console.log("SIGNAL RECEBIDO:", req.body);
-
-  res.status(200).json({
-    ok: true,
-    message: "Signal recebido"
-  });
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor online na porta ${PORT}`));
