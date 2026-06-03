@@ -1,3 +1,4 @@
+
 const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
@@ -9,15 +10,70 @@ app.use(express.json());
 // 🔑 CONFIG
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
-
 const bot = new TelegramBot(token, { polling: false });
 
-// 🔥 CONTROLO
+// ⚙️ CONTROLO
 let ativo = true;
 
 // 📦 HISTÓRICO
 const FILE = "historico.json";
 
+// 🧠 Anti-repetição avançado
+const jogosEnviados = new Map();
+
+// ===============================
+// 📊 SCORE DE QUALIDADE
+// ===============================
+function calcularScore(oddHome, oddAway) {
+  const probHome = 1 / oddHome;
+  const probAway = 1 / oddAway;
+
+  const total = probHome + probAway;
+
+  const homeNorm = probHome / total;
+  const awayNorm = probAway / total;
+
+  const diferenca = Math.abs(homeNorm - awayNorm);
+
+  const score = Math.round(diferenca * 100);
+
+  return { homeNorm, awayNorm, score };
+}
+
+// ===============================
+// 📊 GERAR SINAL
+// ===============================
+function gerarSinal(home, away, scoreData) {
+  if (scoreData.score < 10) return null;
+
+  if (scoreData.homeNorm > scoreData.awayNorm) {
+    return `📊 SINAL FORTE CASA\n🔥 Score: ${scoreData.score}/100`;
+  }
+
+  return `📊 SINAL FORTE FORA\n🔥 Score: ${scoreData.score}/100`;
+}
+
+// ===============================
+// 🚫 ANTI-SPAM
+// ===============================
+function podeEnviar(jogoId) {
+  const agora = Date.now();
+
+  if (jogosEnviados.has(jogoId)) {
+    const ultimo = jogosEnviados.get(jogoId);
+
+    if (agora - ultimo < 30 * 60 * 1000) {
+      return false;
+    }
+  }
+
+  jogosEnviados.set(jogoId, agora);
+  return true;
+}
+
+// ===============================
+// 💾 HISTÓRICO
+// ===============================
 function guardarHistorico(sinal, jogo) {
   let data = [];
 
@@ -28,41 +84,31 @@ function guardarHistorico(sinal, jogo) {
   data.push({
     sinal,
     jogo,
-    hora: new Date()
+    hora: new Date().toISOString()
   });
 
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// 🧠 IA MELHORADA
-function escolherSinal(oddHome, oddAway) {
-  const home = 1 / oddHome;
-  const away = 1 / oddAway;
-
-  const diferenca = Math.abs(home - away);
-
-  if (diferenca < 0.03) {
-    return "📊 SEM SINAL (RISCO ALTO)";
+// ===============================
+// 📩 ENVIAR TELEGRAM
+// ===============================
+async function enviar(msg) {
+  try {
+    await bot.sendMessage(chatId, msg);
+    console.log("📩 Enviado:", msg);
+  } catch (err) {
+    console.log("Erro Telegram:", err.message);
   }
-
-  return home > away
-    ? "📊 IA FORTE: CASA"
-    : "📊 IA FORTE: FORA";
 }
 
-// 🚫 ANTI-SPAM
-let ultimoSinal = "";
-
-function enviar(msg) {
-  if (msg === ultimoSinal) return;
-
-  ultimoSinal = msg;
-  bot.sendMessage(chatId, msg);
-}
-
+// ===============================
 // 🌐 API ODDS
+// ===============================
 async function buscarOdds() {
   try {
+    console.log("🔍 Scan iniciado:", new Date().toLocaleTimeString());
+
     const res = await axios.get(
       "https://api.the-odds-api.com/v4/sports/soccer/odds",
       {
@@ -79,7 +125,7 @@ async function buscarOdds() {
 
     if (!Array.isArray(jogos)) return;
 
-    jogos.forEach(jogo => {
+    for (const jogo of jogos) {
       try {
         const home = jogo.home_team;
         const away = jogo.away_team;
@@ -88,48 +134,60 @@ async function buscarOdds() {
         const market = book?.markets?.[0];
         const odds = market?.outcomes;
 
-        if (!odds || odds.length < 2) return;
+        if (!odds || odds.length < 2) continue;
 
         const oddHome = odds[0].price;
         const oddAway = odds[1].price;
 
-        const sinal = escolherSinal(oddHome, oddAway);
+        const jogoId = `${home} vs ${away}`;
+
+        // 🚫 anti repetição
+        if (!podeEnviar(jogoId)) continue;
+
+        const scoreData = calcularScore(oddHome, oddAway);
+        const sinal = gerarSinal(home, away, scoreData);
+
+        if (!sinal) continue;
 
         const msg = `${sinal}\n⚽ ${home} vs ${away}`;
 
-        enviar(msg);
-        guardarHistorico(sinal, `${home} vs ${away}`);
+        await enviar(msg);
+        guardarHistorico(sinal, jogoId);
 
       } catch (err) {
         console.log("Erro jogo:", err.message);
       }
-    });
+    }
 
   } catch (err) {
     console.log("Erro API:", err.message);
   }
 }
 
-// ⏰ LOOP
+// ===============================
+// ⏰ LOOP INTELIGENTE
+// ===============================
 setInterval(() => {
   if (!ativo) return;
-  buscarOdds().catch(err => console.log(err.message));
-}, 300000);
+  buscarOdds().catch(console.log);
+}, 120000); // 2 minutos ideal
 
-// 🤖 BOTÕES TELEGRAM
+// ===============================
+// 🤖 TELEGRAM CONTROLO
+// ===============================
 const menu = {
   reply_markup: {
     inline_keyboard: [
       [
-        { text: "🟢 LIGAR BOT", callback_data: "start" },
-        { text: "🔴 DESLIGAR BOT", callback_data: "stop" }
+        { text: "🟢 LIGAR", callback_data: "start" },
+        { text: "🔴 DESLIGAR", callback_data: "stop" }
       ]
     ]
   }
 };
 
 bot.onText(/\/menu/, (msg) => {
-  bot.sendMessage(chatId, "⚙️ CONTROLO DO BOT", menu);
+  bot.sendMessage(chatId, "⚙️ FOOTBALL STUDIO BOT", menu);
 });
 
 bot.on("callback_query", (query) => {
@@ -146,12 +204,16 @@ bot.on("callback_query", (query) => {
   }
 });
 
-// 🌐 WEB
+// ===============================
+// 🌐 WEB SERVER
+// ===============================
 app.get("/", (req, res) => {
-  res.send("Football Bot Online ✅");
+  res.send("Football Studio Bot Online ✅");
 });
 
+// ===============================
 // 📊 PAINEL
+// ===============================
 app.get("/panel", (req, res) => {
   let data = [];
 
@@ -160,15 +222,18 @@ app.get("/panel", (req, res) => {
   }
 
   res.send(`
-    <h1>📊 PAINEL PRO</h1>
+    <h1>📊 FOOTBALL STUDIO PANEL</h1>
     <p>Status: ${ativo ? "ON 🟢" : "OFF 🔴"}</p>
     <p>Total sinais: ${data.length}</p>
-    <p>Último: ${data[data.length - 1]?.sinal || "nenhum"}</p>
+    <p>Último sinal: ${data[data.length - 1]?.sinal || "nenhum"}</p>
   `);
 });
 
+// ===============================
 // 🚀 START
+// ===============================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log("🚀 Bot online na porta " + PORT);
+  console.log("🚀 Football Studio Bot online na porta " + PORT);
 });
