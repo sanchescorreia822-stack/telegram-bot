@@ -4,38 +4,20 @@ const FILE = "historico.json";
 
 function read() {
   if (!fs.existsSync(FILE)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(FILE));
-  } catch {
-    return [];
-  }
+  return JSON.parse(fs.readFileSync(FILE));
 }
 
 function save(data) {
   const old = read();
-  old.push({
-    ...data,
-    time: new Date().toISOString()
-  });
-
+  old.push(data);
   fs.writeFileSync(FILE, JSON.stringify(old, null, 2));
 }
 
 function stats() {
   const data = read();
-
-  const wins = data.filter(x => x.result === "WIN").length;
-  const losses = data.filter(x => x.result === "LOSS").length;
-
   return {
-    total: data.length,
-    wins,
-    losses,
-    rate:
-      wins + losses > 0
-        ? ((wins / (wins + losses)) * 100).toFixed(2)
-        : 0
+    total: data.length
   };
 }
 
-module.exports = { read, save, stats };
+module.exports = { save, read, stats };
