@@ -56,11 +56,14 @@ async function getSignals() {
           `🔥 Confiança: ${resu.conf}%\n` +
           `⚽ ${home} vs ${away}`
       });
-    
+    }
+
     return output;
-   } catch (e) {
-  console.log("Erro API Odds:", e.response?.data || e.message);
-  return [];
+
+  } catch (e) {
+    console.log("Erro API Odds:", e.response?.data || e.message);
+    return [];
+  }
 }
 
 module.exports = { getSignals };
