@@ -24,21 +24,25 @@ async function send(msg) {
 
 // LOOP
 setInterval(async () => {
-  if (!ativo) return;
+  try {
+    if (!ativo) return;
 
-  const sinais = await getSignals();
+    const sinais = await getSignals();
 
-  for (const s of sinais) {
-    await send(s.msg);
+    for (const s of sinais) {
+      await send(s.msg);
 
-    save({
-      id: s.id,
-      msg: s.msg,
-      result: "PENDENTE"
-    });
+      save({
+        id: s.id,
+        msg: s.msg,
+        result: "PENDENTE"
+      });
+    }
+
+  } catch (e) {
+    console.log("Erro no loop:", e.message);
   }
 }, 180000);
-
 // API
 app.get("/api/stats", (req, res) => {
   res.json(stats());
