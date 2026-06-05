@@ -54,8 +54,9 @@ app.get("/api/history", (req, res) => {
 
 // HOME
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/dashboard.html");
+  res.send("APP FOOTBALL STUDIO PRO ONLINE ⚽");
 });
+
 
 // START
 app.listen(process.env.PORT || 3000, () => {
