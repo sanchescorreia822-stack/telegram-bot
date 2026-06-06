@@ -34,11 +34,10 @@ app.get("/teste", (req, res) => {
 });
 
 // 🔥 WEBHOOK (OBRIGATÓRIO)
-app.post(`/bot${token}`, (req, res) => {
+app.post("/bot", (req, res) => {
   bot.processUpdate(req.body);
   res.sendStatus(200);
 });
-
 // 🔔 SINAL AUTOMÁTICO (CONTROLADO)
 setInterval(() => {
   if (chatId) {
