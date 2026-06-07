@@ -9,7 +9,7 @@ app.use(express.json());
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
 
-const bot = new TelegramBot(token);
+const bot = new TelegramBot(token, { polling: false });
 
 console.log("🧠 FOOTBALL STUDIO AI ONLINE");
 
@@ -137,7 +137,10 @@ setInterval(async () => {
 
     const signal = aiPick(game, history);
 
+    // só envia sinais fortes
     if (signal.confidence >= 0.75) {
+
+      // 1. envia sinal
       await bot.sendMessage(chatId,
 `🧠 FOOTBALL STUDIO AI
 
@@ -146,20 +149,31 @@ setInterval(async () => {
 🎯 PICK: ${signal.pick}
 📊 Confiança: ${(signal.confidence * 100).toFixed(1)}%
 
-🔥 IA MODE ATIVO`
+⏳ A aguardar resultado...`
       );
 
-      // simulação de resultado real
-      const fakeResult = game.outcomes.sort((a, b) => b.probability - a.probability)[0].name;
+      // 2. simular resultado (futuro: API real)
+      const fakeResult = game.outcomes
+        .sort((a, b) => b.probability - a.probability)[0].name;
 
-      addRecord(fakeResult, signal.pick, signal.confidence);
+      const win = addRecord(fakeResult, signal.pick, signal.confidence);
+
+      // 3. envia resultado WIN / RED
+      await bot.sendMessage(chatId,
+`📊 RESULTADO FINAL
+
+🏁 Resultado: ${fakeResult}
+🎯 Pick: ${signal.pick}
+
+${win ? "🟢 WIN" : "🔴 RED"}`
+      );
+
     }
 
   } catch (err) {
     console.log("ERROR:", err.message);
   }
 }, 60000);
-
 // ---------------- ROUTES ----------------
 app.get("/", (req, res) => {
   res.send("FOOTBALL STUDIO AI ONLINE");
