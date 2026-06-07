@@ -1,87 +1,56 @@
 const TelegramBot = require("node-telegram-bot-api");
+const axios = require("axios");
 
-const token = "8603735814:AAEsgetsnBn1NLMuyDrxQpbIOYTA_Zw_nj8";
-const chatId = "6942730957";
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
+const chatId = process.env.CHAT_ID;
 
-const bot = new TelegramBot(token, { polling: true });
-
-let historico = [];
-let wins = 0;
-let loss = 0;
-
-function gerarCor() {
-    return Math.random() > 0.5 ? "🔵 AZUL" : "🔴 VERMELHO";
+function getGameData() {
+  return {
+    outcomes: [
+      { name: "Casa", probability: Math.random() },
+      { name: "Azul", probability: Math.random() },
+      { name: "Vermelho", probability: Math.random() }
+    ]
+  };
 }
 
-function analisarTendencia() {
+setInterval(async () => {
+  try {
+    const game = getGameData();
 
-    if (historico.length < 3) {
-        return gerarCor();
+    const pred = await axios.post("http://localhost:4000/predict", game);
+
+    const signal = pred.data;
+
+    if (signal.confidence > 0.7) {
+
+      await bot.sendMessage(chatId,
+`🧠 SAAS AI BOT
+
+🎯 PICK: ${signal.pick}
+📊 Confiança: ${(signal.confidence * 100).toFixed(1)}%
+
+⏳ A aguardar resultado...`
+      );
+
+      const fakeResult = game.outcomes
+        .sort((a, b) => b.probability - a.probability)[0].name;
+
+      const result = await axios.post("http://localhost:4000/result", {
+        result: fakeResult,
+        pick: signal.pick,
+        confidence: signal.confidence
+      });
+
+      await bot.sendMessage(chatId,
+`📊 RESULTADO
+
+🏁 ${fakeResult}
+${result.data.win ? "🟢 WIN" : "🔴 RED"}`
+      );
     }
 
-    const ultimos = historico.slice(-3);
-
-    const todosAzul = ultimos.every(c => c.includes("AZUL"));
-    const todosVermelho = ultimos.every(c => c.includes("VERMELHO"));
-
-    if (todosAzul) {
-        return "🔴 VERMELHO";
-    }
-
-    if (todosVermelho) {
-        return "🔵 AZUL";
-    }
-
-    return gerarCor();
-}
-
-function enviarSinal() {
-
-    const sinal = analisarTendencia();
-
-    historico.push(sinal);
-
-    bot.sendMessage(chatId,
-`🚨 ENTRADA CONFIRMADA 🚨
-
-${sinal}
-⚪ Proteção no Branco
-
-📊 Estratégia: Tendência
-🎯 Gale: 1
-
-⏰ Entrar agora`);
-
-    setTimeout(() => {
-
-        const win = Math.random() > 0.35;
-
-        if (win) {
-
-            wins++;
-
-            bot.sendMessage(chatId,
-`✅ WIN GREEN
-
-📊 Placar
-
-✅ ${wins} Wins
-❌ ${loss} Loss`);
-
-        } else {
-
-            loss++;
-
-            bot.sendMessage(chatId,
-`❌ LOSS
-
-📊 Placar
-
-✅ ${wins} Wins
-❌ ${loss} Loss`);
-        }
-
-    }, 15000);
-}
-
-setInterval(enviarSinal, 120000);
+  } catch (err) {
+    console.log(err.message);
+  }
+}, 60000);

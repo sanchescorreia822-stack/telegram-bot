@@ -191,7 +191,32 @@ ${win ? "🟢 WIN" : "🔴 RED"}
 app.get("/", (req, res) => {
   res.send("FOOTBALL STUDIO AI PRO ONLINE");
 });
+// 🔥 STATS API
+app.get("/stats", (req, res) => {
+  const history = loadHistory();
 
+  const total = history.length;
+
+  const wins = history.reduce((acc, h) => acc + (h.win ? 1 : 0), 0);
+
+  const winRate = total > 0 ? (wins / total) * 100 : 0;
+
+  let streak = 0;
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].win === true) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  res.json({
+    winRate: Number(winRate.toFixed(1)),
+    streak,
+    total
+  });
+});
 app.listen(process.env.PORT || 3000, () => {
   console.log("SERVER ONLINE");
 });
