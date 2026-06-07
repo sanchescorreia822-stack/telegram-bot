@@ -11,7 +11,7 @@ const chatId = process.env.CHAT_ID;
 
 const bot = new TelegramBot(token, { polling: false });
 
-console.log("🧠 FOOTBALL STUDIO AI ONLINE");
+console.log("🧠 FOOTBALL STUDIO AI PRO ONLINE");
 
 // ---------------- HISTORY ----------------
 const FILE = "history.json";
@@ -25,7 +25,7 @@ function saveHistory(data) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
 }
 
-// ---------------- SIMULAÇÃO / FUTURO API ----------------
+// ---------------- GAME SIM (substituir depois por API real) ----------------
 function getGameData() {
   return {
     outcomes: [
@@ -36,81 +36,88 @@ function getGameData() {
   };
 }
 
-// ---------------- IA CORE ----------------
-function calculateWeights(game, history) {
-  const weights = {
-    Casa: 0,
-    Azul: 0,
-    Vermelho: 0
-  };
+// ---------------- IA PRO ----------------
+function aiPick(game, history) {
+  const weights = { Casa: 0, Azul: 0, Vermelho: 0 };
 
-  // base do jogo
   for (let o of game.outcomes) {
     weights[o.name] = o.probability * 100;
   }
 
-  // aprendizagem com histórico
-  const stats = { Casa: [], Azul: [], Vermelho: [] };
+  const stats = {
+    Casa: { wins: 0, total: 0 },
+    Azul: { wins: 0, total: 0 },
+    Vermelho: { wins: 0, total: 0 }
+  };
 
-  for (let h of history) {
-    if (h.win !== undefined) {
-      stats[h.pick].push(h.win);
+  history.forEach(h => {
+    if (stats[h.pick]) {
+      stats[h.pick].total++;
+      if (h.win) stats[h.pick].wins++;
     }
-  }
+  });
 
   for (let key in stats) {
-    const arr = stats[key];
-
-    if (arr.length > 5) {
-      const winRate = arr.filter(v => v).length / arr.length;
-      weights[key] += (winRate - 0.5) * 40;
+    const s = stats[key];
+    if (s.total >= 5) {
+      const winRate = s.wins / s.total;
+      weights[key] += (winRate - 0.5) * 60;
     }
   }
 
-  // tendência recente
   const last = history.slice(-10);
-
   const count = { Casa: 0, Azul: 0, Vermelho: 0 };
 
-  for (let h of last) {
-    count[h.result]++;
-  }
+  last.forEach(h => {
+    if (count[h.result] !== undefined) {
+      count[h.result]++;
+    }
+  });
 
   const total = last.length || 1;
 
-  weights.Casa += (count.Casa / total) * 20;
-  weights.Azul += (count.Azul / total) * 20;
-  weights.Vermelho += (count.Vermelho / total) * 20;
+  weights.Casa += (count.Casa / total) * 25;
+  weights.Azul += (count.Azul / total) * 25;
+  weights.Vermelho += (count.Vermelho / total) * 25;
 
-  // anti repetição
   const lastPick = history[history.length - 1]?.pick;
-  if (lastPick) {
-    weights[lastPick] -= 8;
-  }
-
-  return weights;
-}
-
-// ---------------- DECISÃO IA ----------------
-function aiPick(game, history) {
-  const weights = calculateWeights(game, history);
+  if (lastPick) weights[lastPick] -= 10;
 
   let best = "Casa";
   let bestScore = weights.Casa;
 
-  for (let key in weights) {
-    if (weights[key] > bestScore) {
-      best = key;
-      bestScore = weights[key];
+  for (let k in weights) {
+    if (weights[k] > bestScore) {
+      best = k;
+      bestScore = weights[k];
     }
   }
 
-  const confidence = Math.max(0, Math.min(1, bestScore / 100));
+  const confidence = Math.max(0, Math.min(1, bestScore / 120));
 
   return { pick: best, confidence };
 }
 
-// ---------------- REGISTO ----------------
+// ---------------- STATS ----------------
+function getStats(history) {
+  let wins = 0;
+
+  for (let h of history) {
+    if (h.win) wins++;
+  }
+
+  const winRate = history.length ? (wins / history.length) * 100 : 0;
+
+  let streak = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].win) streak++;
+    else break;
+  }
+
+  return { winRate, streak };
+}
+
+// ---------------- SAVE RESULT ----------------
 function addRecord(result, pick, confidence) {
   const history = loadHistory();
 
@@ -127,6 +134,8 @@ function addRecord(result, pick, confidence) {
   if (history.length > 200) history.shift();
 
   saveHistory(history);
+
+  return win;
 }
 
 // ---------------- LOOP PRINCIPAL ----------------
@@ -137,49 +146,52 @@ setInterval(async () => {
 
     const signal = aiPick(game, history);
 
-    // só envia sinais fortes
-    if (signal.confidence >= 0.75) {
+    if (signal.confidence >= 0.72) {
 
-      // 1. envia sinal
+      const statsBefore = getStats(history);
+
       await bot.sendMessage(chatId,
-`🧠 FOOTBALL STUDIO AI
-
-🏠 Casa vs 🔵 Azul vs 🔴 Vermelho
+`🧠 FOOTBALL STUDIO AI PRO
 
 🎯 PICK: ${signal.pick}
 📊 Confiança: ${(signal.confidence * 100).toFixed(1)}%
 
+📈 Win Rate: ${statsBefore.winRate.toFixed(1)}%
+🔥 Streak: ${statsBefore.streak}
+
 ⏳ A aguardar resultado...`
       );
 
-      // 2. simular resultado (futuro: API real)
       const fakeResult = game.outcomes
         .sort((a, b) => b.probability - a.probability)[0].name;
 
       const win = addRecord(fakeResult, signal.pick, signal.confidence);
 
-      // 3. envia resultado WIN / RED
+      const statsAfter = getStats(loadHistory());
+
       await bot.sendMessage(chatId,
 `📊 RESULTADO FINAL
 
 🏁 Resultado: ${fakeResult}
 🎯 Pick: ${signal.pick}
 
-${win ? "🟢 WIN" : "🔴 RED"}`
-      );
+${win ? "🟢 WIN" : "🔴 RED"}
 
+📈 Win Rate: ${statsAfter.winRate.toFixed(1)}%
+🔥 Streak: ${statsAfter.streak}`
+      );
     }
 
   } catch (err) {
     console.log("ERROR:", err.message);
   }
 }, 60000);
-// ---------------- ROUTES ----------------
+
+// ---------------- SERVER ----------------
 app.get("/", (req, res) => {
-  res.send("FOOTBALL STUDIO AI ONLINE");
+  res.send("FOOTBALL STUDIO AI PRO ONLINE");
 });
 
-// ---------------- START ----------------
 app.listen(process.env.PORT || 3000, () => {
-  console.log("ONLINE");
+  console.log("SERVER ONLINE");
 });
