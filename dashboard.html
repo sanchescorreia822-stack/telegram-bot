@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Football Studio AI PRO</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f0f0f;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1c1c1c;
+      padding: 20px;
+      margin: 10px auto;
+      width: 300px;
+      border-radius: 10px;
+    }
+
+    .win { color: #00ff88; }
+    .red { color: #ff3b3b; }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Football Studio AI PRO</h1>
+
+  <div class="card">
+    <h2>📊 Win Rate</h2>
+    <h1 id="winRate">0%</h1>
+  </div>
+
+  <div class="card">
+    <h2>🔥 Streak</h2>
+    <h1 id="streak">0</h1>
+  </div>
+
+  <div class="card">
+    <h2>📦 Total Trades</h2>
+    <h1 id="total">0</h1>
+  </div>
+
+  <script>
+    async function loadStats() {
+      const res = await fetch("/stats");
+      const data = await res.json();
+
+      document.getElementById("winRate").innerText = data.winRate + "%";
+      document.getElementById("streak").innerText = data.streak;
+      document.getElementById("total").innerText = data.total;
+    }
+
+    setInterval(loadStats, 3000);
+    loadStats();
+  </script>
+
+</body>
+</html>
