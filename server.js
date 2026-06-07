@@ -1,9 +1,11 @@
 const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(express.json());
+app.use(express.static("public"));
 
 // ---------------- CONFIG ----------------
 const token = process.env.BOT_TOKEN;
@@ -189,7 +191,7 @@ ${win ? "🟢 WIN" : "🔴 RED"}
 
 // ---------------- SERVER ----------------
 app.get("/", (req, res) => {
-  res.send("FOOTBALL STUDIO AI PRO ONLINE");
+  res.send("FOOTBALL STUDIO AI ONLINE");
 });
 // 🔥 STATS API
 app.get("/stats", (req, res) => {
