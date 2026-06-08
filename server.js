@@ -10,6 +10,7 @@ app.use(express.json());
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
 const ODDS_KEY = process.env.ODDS_API_KEY;
+console.log("ODDS KEY:", process.env.ODDS_API_KEY);
 
 const bot = new TelegramBot(token, { polling: false });
 
