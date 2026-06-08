@@ -44,12 +44,13 @@ async function getRealOdds() {
     );
 
     return res.data;
-  } catch (err) {
-    console.log("ODDS ERROR:", err.message);
-    return [];
-  }
+  catch (err) {
+  console.log(
+    "ODDS ERROR:",
+    err.response?.data || err.message
+  );
+  return [];
 }
-
 function oddsToProbability(odds) {
   return 1 / odds;
 }
