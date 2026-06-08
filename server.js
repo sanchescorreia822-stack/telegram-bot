@@ -94,20 +94,19 @@ async function getGameData() {
 function aiPick(game, history) {
   const weights = { Casa: 0, Azul: 0, Vermelho: 0 };
 
+  // base das odds
   for (let o of game.outcomes) {
     weights[o.name] = o.probability * 100;
   }
 
-  history.forEach(h => {
-    if (h.win) {
-      weights[h.pick] += 5;
-    } else {
-      weights[h.pick] -= 2;
-    }
+  // histórico (leve influência)
+  history.slice(-50).forEach(h => {
+    if (h.win) weights[h.pick] += 2;
+    else weights[h.pick] -= 1;
   });
 
-  let best = "Casa";
-  let bestScore = weights[best];
+  let best = null;
+  let bestScore = -Infinity;
 
   for (let k in weights) {
     if (weights[k] > bestScore) {
@@ -116,11 +115,30 @@ function aiPick(game, history) {
     }
   }
 
-  const confidence = Math.max(0, Math.min(1, bestScore / 120));
+  // média das probabilidades
+  const totalProb = game.outcomes.reduce((a, b) => a + b.probability, 0);
+  const normalized = game.outcomes.map(o => ({
+    ...o,
+    norm: o.probability / totalProb
+  }));
 
-  return { pick: best, confidence };
+  const picked = normalized.find(o => o.name === best);
+
+  // VALUE BET logic (CHAVE DO SISTEMA)
+  const marketProb = picked?.norm || 0;
+  const impliedEdge = picked?.probability - marketProb;
+
+  // confiança real (mais conservadora)
+  const confidence = Math.max(0, Math.min(1,
+    (bestScore / 150) + (impliedEdge * 2)
+  ));
+
+  return {
+    pick: best,
+    confidence,
+    edge: impliedEdge
+  };
 }
-
 // ================= STATS =================
 function getStats(history) {
   const total = history.length;
@@ -170,8 +188,8 @@ setInterval(async () => {
 
     const signal = aiPick(game, history);
 
-    if (signal.confidence >= 0.72) {
-
+if (signal.confidence >= 0.78 && signal.edge > 0.05) {
+    
       const stats = getStats(history);
 
       await bot.sendMessage(chatId,
