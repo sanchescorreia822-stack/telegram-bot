@@ -10,7 +10,8 @@ app.use(express.json());
 const token = process.env.BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
 const ODDS_KEY = process.env.ODDS_API_KEY;
-console.log("ODDS KEY:", process.env.ODDS_API_KEY);
+
+console.log("ODDS KEY:", ODDS_KEY ? "OK" : "MISSING");
 
 const bot = new TelegramBot(token, { polling: false });
 
@@ -21,7 +22,11 @@ const FILE = "history.json";
 
 function loadHistory() {
   if (!fs.existsSync(FILE)) return [];
-  return JSON.parse(fs.readFileSync(FILE));
+  try {
+    return JSON.parse(fs.readFileSync(FILE));
+  } catch {
+    return [];
+  }
 }
 
 function saveHistory(data) {
@@ -44,14 +49,16 @@ async function getRealOdds() {
     );
 
     return res.data;
-  catch (err) {
-  console.log(
-    "ODDS ERROR:",
-    err.response?.data || err.message
-  );
-  return [];
+
+  } catch (err) {
+    console.log("ODDS ERROR:", err.response?.data || err.message);
+    return [];
+  }
 }
+
+// ================= UTILS =================
 function oddsToProbability(odds) {
+  if (!odds) return 0;
   return 1 / odds;
 }
 
@@ -59,7 +66,7 @@ function oddsToProbability(odds) {
 async function getGameData() {
   const data = await getRealOdds();
 
-  if (!data.length) {
+  if (!data || !data.length) {
     return {
       outcomes: [
         { name: "Casa", probability: Math.random() },
@@ -100,7 +107,7 @@ function aiPick(game, history) {
   });
 
   let best = "Casa";
-  let bestScore = weights.Casa;
+  let bestScore = weights[best];
 
   for (let k in weights) {
     if (weights[k] > bestScore) {
@@ -117,7 +124,7 @@ function aiPick(game, history) {
 // ================= STATS =================
 function getStats(history) {
   const total = history.length;
-  const wins = history.reduce((a, b) => a + (b.win ? 1 : 0), 0);
+  const wins = history.filter(h => h.win).length;
 
   const winRate = total ? (wins / total) * 100 : 0;
 
@@ -200,7 +207,7 @@ ${win ? "🟢 WIN" : "🔴 RED"}
     }
 
   } catch (err) {
-    console.log("ERROR:", err.message);
+    console.log("MAIN LOOP ERROR:", err.message);
   }
 }, 60000);
 
