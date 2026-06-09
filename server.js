@@ -171,26 +171,25 @@ function getStats(history) {
 }
 
 // ================= SAVE RESULT =================
-function addRecord(result, pick, confidence) {
-  const history = loadHistory();
+const HISTORY_FILE = "history.json";
 
-  const win = result === pick;
+function loadHistory() {
+  if (!fs.existsSync(HISTORY_FILE)) return [];
 
-  history.push({
-    result,
-    pick,
-    confidence,
-    win,
-    time: Date.now()
-  });
-
-  if (history.length > 300) history.shift();
-
-  saveHistory(history);
-
-  return win;
+  try {
+    return JSON.parse(fs.readFileSync(HISTORY_FILE));
+  } catch (err) {
+    console.log("HISTORY LOAD ERROR:", err);
+    return [];
+  }
 }
 
+function saveHistory(history) {
+  fs.writeFileSync(
+    HISTORY_FILE,
+    JSON.stringify(history, null, 2)
+  );
+}
 // ================= MAIN LOOP =================
 setInterval(async () => {
   try {
@@ -201,13 +200,24 @@ lastSignalTime = now;
 
     const game = await getGameData();
 
-    const signal = aiPick(game, history);
+     const signal = aiPick(game, history);
+
+const league = "Football Studio";
+
+console.log(
+  "SINAL:",
+  signal.pick,
+  "CONF:",
+  signal.confidence,
+  "EDGE:",
+  signal.edge
+);
+
 if (
-  signal.confidence >= 0.80 &&
-  signal.edge >= 0.07 &&
+  signal.confidence >= 0.20 &&
+  signal.edge >= 0.01 &&
   !isBadLeague(league)
-) {
-    
+) {  
       const stats = getStats(history);
 
       await bot.sendMessage(chatId,
@@ -241,12 +251,10 @@ ${win ? "🟢 WIN" : "🔴 RED"}
 
 📈 Win Rate: ${updatedStats.winRate}%
 🔥 Streak: ${updatedStats.streak}`
-      );
-    }
-
-  } catch (err) {
-    console.log("MAIN LOOP ERROR:", err.message);
-  }
+   
+   catch (err) {
+  console.error("MAIN LOOP ERROR:", err);
+}
 }, 60000);
 
 // ================= ROUTES =================
