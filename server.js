@@ -171,6 +171,18 @@ function getStats(history) {
 }
 
 // ================= SAVE RESULT =================
+function saveHistory(history) {
+  fs.writeFileSync(
+    HISTORY_FILE,
+    JSON.stringify(history, null, 2)
+  );
+}
+// ================= MAIN LOOP =================
+setInterval(async () => {
+  try {
+  const now = Date.now();
+if (now - lastSignalTime < 10 * 60 * 1000) return;
+lastSignalTime = now;
 const HISTORY_FILE = "history.json";
 
 function loadHistory() {
@@ -190,12 +202,6 @@ function saveHistory(history) {
     JSON.stringify(history, null, 2)
   );
 }
-// ================= MAIN LOOP =================
-setInterval(async () => {
-  try {
-  const now = Date.now();
-if (now - lastSignalTime < 10 * 60 * 1000) return;
-lastSignalTime = now;
     const history = loadHistory();
 
     const game = await getGameData();
@@ -218,17 +224,19 @@ if (
   signal.edge >= 0.01 &&
   !isBadLeague(league)
 ) {  
-      const stats = getStats(history);
+   const stats = getStats(history);
+ await bot.sendMessage(
+  chatId,
+  `📊 RESULTADO FINAL
 
-      await bot.sendMessage(chatId,
-`🧠 FOOTBALL STUDIO AI PRO
+🏁 Resultado: ${result}
+🎯 Pick: ${signal.pick}
 
-🎯 PICK: ${signal.pick}
-📊 Confiança: ${(signal.confidence * 100).toFixed(1)}%
+${win ? "🟢 WIN" : "🔴 RED"}
 
-📈 Win Rate: ${stats.winRate}%
-🔥 Streak: ${stats.streak}
-
+📈 Win Rate: ${updatedStats.winRate}%
+🔥 Streak: ${updatedStats.streak}`
+);
 ⏳ A aguardar resultado...`
       );
 
