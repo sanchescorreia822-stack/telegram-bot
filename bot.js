@@ -1,5 +1,5 @@
 const { analyzePattern } = require("./analyzer");
-const { addPendingSignal } = require("./history");
+const { loadHistory, addPendingSignal } = require("./history");
 const { sendSignal } = require("./telegram");
 
 let lastSignalTime = 0;
@@ -8,14 +8,14 @@ function startBot() {
   console.log("🧠 Bot automático iniciado");
 
   setInterval(() => {
-const { loadHistory } = require("./history");
-
-const history = loadHistory();
-const analysis = analyzePattern(history);
+    const history = loadHistory();
+    const analysis = analyzePattern(history);
 
     if (!analysis) return;
 
     const now = Date.now();
+
+    // ⛔ cooldown de 15s
     if (now - lastSignalTime < 15000) return;
 
     // 📩 envia sinal
@@ -30,7 +30,6 @@ const analysis = analyzePattern(history);
     lastSignalTime = now;
 
     console.log("📩 Sinal enviado e guardado como PENDING");
-
   }, 5000);
 }
 

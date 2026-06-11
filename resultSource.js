@@ -10,12 +10,10 @@ async function checkResultFromSource() {
 
   let finalResult = null;
 
-  // 🔥 CAPTURAR RESPOSTAS DA REDE
   page.on("response", async (response) => {
     try {
       const url = response.url();
 
-      // 🔴 aqui vamos apanhar API do jogo
       if (
         url.includes("result") ||
         url.includes("game") ||
@@ -25,7 +23,6 @@ async function checkResultFromSource() {
         const data = await response.json().catch(() => null);
 
         if (data) {
-          // 🔥 AJUSTA ISTO DEPOIS DE VER O JSON REAL
           if (data.result) finalResult = data.result;
           if (data.color) finalResult = data.color;
         }
@@ -37,15 +34,16 @@ async function checkResultFromSource() {
     waitUntil: "networkidle2"
   });
 
-  // ⏳ esperar dados carregarem
   await new Promise(r => setTimeout(r, 5000));
 
   await browser.close();
 
   if (!finalResult) return null;
 
-  if (finalResult.toLowerCase().includes("blue")) return "blue";
-  if (finalResult.toLowerCase().includes("red")) return "red";
+  finalResult = finalResult.toLowerCase();
+
+  if (finalResult.includes("blue")) return "blue";
+  if (finalResult.includes("red")) return "red";
 
   return null;
 }

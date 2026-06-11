@@ -11,4 +11,4 @@ app.get("/", (req, res) => {
 startBot();
 startResultChecker();
 
-app.listen(3000);
+app.listen(process.env.PORT || 3000);

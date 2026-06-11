@@ -1,5 +1,5 @@
 const { loadHistory, resolveSignal } = require("./history");
-const { checkResultFromSource } = require("./football/resultSource");
+const fakeResult = Math.random() > 0.5 ? "blue" : "red";
 
 let isRunning = false;
 
