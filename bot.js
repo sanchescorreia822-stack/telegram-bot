@@ -6,11 +6,18 @@ let lastSignalTime = 0;
 
 function startBot() {
   console.log("🧠 Bot automático iniciado");
+setInterval(() => {
+  const history = loadHistory();
 
-  setInterval(() => {
-    const history = loadHistory();
-    const analysis = analyzePattern(history);
+  console.log("HISTORY SIZE:", history.length);
+  console.log("LAST RESULT SAMPLE:", history.slice(-5));
 
+  const analysis = analyzePattern(history);
+
+  console.log("ANALYSIS:", analysis);
+
+
+if (!history || history.length === 0) return;
     if (!analysis) return;
 
     const now = Date.now();

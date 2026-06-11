@@ -6,8 +6,8 @@ function analyzePattern(history) {
     .map(h => h.result)
     .filter(r => r === "blue" || r === "red");
 
-  if (last.length < 7) return null;
-
+  if (last.length < 3) return null;
+ 
   const stats = getRecentStats();
   const weighted = getWeightedStats();
 
@@ -55,13 +55,12 @@ const stability = 1 - (changes / (last.length - 1));
 
   let signal = scoreBlue > scoreRed ? "blue" : "red";
   let confidence = Math.max(scoreBlue, scoreRed);
-
-  if (confidence < 80) return null;
-
+  
+if (confidence < 60) return null;
+  
   const difference = Math.abs(scoreBlue - scoreRed);
 
-  if (difference < 15) return null;
-
+  if (difference < 5) return null;
   return {
     signal,
     confidence: Math.min(92, Math.round(confidence))
