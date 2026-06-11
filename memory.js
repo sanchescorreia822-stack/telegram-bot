@@ -10,14 +10,11 @@ function getRecentStats(limit = 80) {
 
   history.forEach((h, i) => {
     const weight = (i + 1) / history.length;
-if (h.signal === "blue") {
-  blueScore += (h.weight || 0) * weight;
-}
 
-if (h.signal === "red") {
-  redScore += (h.weight || 0) * weight;
-}
-    
+    if (h.signal === "blue" && h.win) blueScore += weight;
+    if (h.signal === "red" && h.win) redScore += weight;
+  });
+
   return {
     blueRate: blueScore,
     redRate: redScore
