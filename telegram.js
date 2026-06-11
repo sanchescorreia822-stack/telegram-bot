@@ -1,24 +1,26 @@
-const TelegramBot = require("node-telegram-bot-api");
+const axios = require("axios");
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
-  polling: false
-});
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
 
-function sendSignal(data) {
-  const { signal, confidence } = data;
+async function sendSignal({ signal, confidence }) {
+  const message = `
+📊 SINAL GERADO
+🎯 Direção: ${signal}
+📈 Confiança: ${confidence}%
+`;
 
-  const msg =
-`📊 FOOTBALL STUDIO PRO
-
-🎯 Sinal: ${signal.toUpperCase()}
-🔥 Confiança: ${confidence}%
-
-⏱ Hora: ${new Date().toLocaleString()}`;
-
-  bot.sendMessage(process.env.TELEGRAM_CHAT_ID, msg)
-    .catch(err => {
-      console.log("TELEGRAM ERROR:", err.message);
-    });
+  try {
+    await axios.post(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      {
+        chat_id: CHAT_ID,
+        text: message
+      }
+    );
+  } catch (err) {
+    console.log("Erro Telegram:", err.message);
+  }
 }
 
 module.exports = { sendSignal };
