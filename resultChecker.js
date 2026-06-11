@@ -1,5 +1,5 @@
 const { loadHistory, resolveSignal } = require("./history");
-const { checkResultFromSource } = require("./resultSource");
+const { checkResultFromSource } = require("./football/resultSource");
 
 let isRunning = false;
 
