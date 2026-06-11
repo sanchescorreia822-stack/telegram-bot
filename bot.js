@@ -1,56 +1,37 @@
-const TelegramBot = require("node-telegram-bot-api");
-const axios = require("axios");
+const { analyzePattern } = require("./analyzer");
+const { addPendingSignal } = require("./history");
+const { sendSignal } = require("./telegram");
 
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: false });
-const chatId = process.env.CHAT_ID;
+let lastSignalTime = 0;
 
-function getGameData() {
-  return {
-    outcomes: [
-      { name: "Casa", probability: Math.random() },
-      { name: "Azul", probability: Math.random() },
-      { name: "Vermelho", probability: Math.random() }
-    ]
-  };
+function startBot() {
+  console.log("🧠 Bot automático iniciado");
+
+  setInterval(() => {
+const { loadHistory } = require("./history");
+
+const history = loadHistory();
+const analysis = analyzePattern(history);
+
+    if (!analysis) return;
+
+    const now = Date.now();
+    if (now - lastSignalTime < 15000) return;
+
+    // 📩 envia sinal
+    sendSignal({
+      signal: analysis.signal,
+      confidence: analysis.confidence
+    });
+
+    // 💾 guarda como PENDING
+    addPendingSignal(analysis.signal);
+
+    lastSignalTime = now;
+
+    console.log("📩 Sinal enviado e guardado como PENDING");
+
+  }, 5000);
 }
 
-setInterval(async () => {
-  try {
-    const game = getGameData();
-
-    const pred = await axios.post("http://localhost:4000/predict", game);
-
-    const signal = pred.data;
-
-    if (signal.confidence > 0.7) {
-
-      await bot.sendMessage(chatId,
-`🧠 SAAS AI BOT
-
-🎯 PICK: ${signal.pick}
-📊 Confiança: ${(signal.confidence * 100).toFixed(1)}%
-
-⏳ A aguardar resultado...`
-      );
-
-      const fakeResult = game.outcomes
-        .sort((a, b) => b.probability - a.probability)[0].name;
-
-      const result = await axios.post("http://localhost:4000/result", {
-        result: fakeResult,
-        pick: signal.pick,
-        confidence: signal.confidence
-      });
-
-      await bot.sendMessage(chatId,
-`📊 RESULTADO
-
-🏁 ${fakeResult}
-${result.data.win ? "🟢 WIN" : "🔴 RED"}`
-      );
-    }
-
-  } catch (err) {
-    console.log(err.message);
-  }
-}, 60000);
+module.exports = { startBot };
