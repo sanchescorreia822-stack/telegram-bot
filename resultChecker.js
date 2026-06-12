@@ -22,10 +22,18 @@ function startResultChecker() {
       // 🔥 RESULTADO SIMULADO (temporário)
       const actualResult = Math.random() > 0.5 ? "blue" : "red";
 
-      for (const signal of pendingSignals) {
-        resolveSignal(signal.index, actualResult);
-        console.log("📊 Resultado atualizado:", actualResult);
-      }
+    for (const signal of pendingSignals) {
+  resolveSignal(signal.index, actualResult);
+
+  if (global.bot && global.chatId) {
+    global.bot.sendMessage(
+      global.chatId,
+      `📊 Resultado: ${actualResult}`
+    );
+  }
+
+  console.log("📊 Resultado atualizado:", actualResult);
+}
 
     } catch (err) {
       console.log("RESULT CHECK ERROR:", err);
