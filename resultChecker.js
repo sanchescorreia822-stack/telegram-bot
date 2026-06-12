@@ -1,5 +1,4 @@
 const { loadHistory, resolveSignal } = require("./history");
-const fakeResult = Math.random() > 0.5 ? "blue" : "red";
 
 let isRunning = false;
 
@@ -20,12 +19,8 @@ function startResultChecker() {
         return;
       }
 
-      const actualResult = await checkResultFromSource();
-
-      if (!actualResult) {
-        isRunning = false;
-        return;
-      }
+      // 🔥 RESULTADO SIMULADO (temporário)
+      const actualResult = Math.random() > 0.5 ? "blue" : "red";
 
       for (const signal of pendingSignals) {
         resolveSignal(signal.index, actualResult);

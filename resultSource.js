@@ -1,5 +1,5 @@
 const puppeteer = require("puppeteer");
-
+const { checkResultFromSource } = require("./resultSource");
 async function checkResultFromSource() {
   const browser = await puppeteer.launch({
     headless: "new",
