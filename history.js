@@ -18,6 +18,8 @@ function saveHistory(data) {
 
 // 🔥 guardar sinal pendente
 function addPendingSignal(signal) {
+  console.log("SAVING SIGNAL:", signal);
+
   const history = loadHistory();
 
   history.push({
@@ -26,31 +28,30 @@ function addPendingSignal(signal) {
     time: Date.now()
   });
 
-  if (history.length > 500) {
-    history.shift();
-  }
-
   saveHistory(history);
+
+  console.log("NEW HISTORY SIZE:", history.length);
 }
+
 // 🔥 atualizar resultado
 function resolveSignal(index, result) {
   const history = loadHistory();
 
-history[index].weight = win ? 1 : -1;
-
-
   const signal = history[index].signal;
-  const win = String(signal).toLowerCase() === String(result).toLowerCase();
-  
+  const win =
+    String(signal).toLowerCase() ===
+    String(result).toLowerCase();
+
   history[index].result = result;
   history[index].status = win ? "GREEN" : "RED";
   history[index].win = win;
-
-  // 🧠 peso de aprendizagem
   history[index].weight = win ? 1 : -1;
 
   saveHistory(history);
 }
+
+
+
 module.exports = {
   loadHistory,
   saveHistory,
