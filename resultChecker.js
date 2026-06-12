@@ -1,4 +1,5 @@
 const { loadHistory, resolveSignal } = require("./history");
+const { sendSignal } = require("./telegram");
 
 let isRunning = false;
 
@@ -22,19 +23,16 @@ function startResultChecker() {
       // 🔥 RESULTADO SIMULADO (temporário)
       const actualResult = Math.random() > 0.5 ? "blue" : "red";
 
-    for (const signal of pendingSignals) {
+  for (const signal of pendingSignals) {
   resolveSignal(signal.index, actualResult);
 
-  if (global.bot && global.chatId) {
-    global.bot.sendMessage(
-      global.chatId,
-      `📊 Resultado: ${actualResult}`
-    );
-  }
+  sendSignal({
+    signal: actualResult,
+    confidence: 85
+  });
 
   console.log("📊 Resultado atualizado:", actualResult);
 }
-
     } catch (err) {
       console.log("RESULT CHECK ERROR:", err);
     } finally {
