@@ -16,8 +16,11 @@ setInterval(() => {
 
   console.log("ANALYSIS:", analysis);
 
-
-if (!history || history.length === 0) return;
+if (!history || history.length === 0) {
+  addPendingSignal("blue");
+  console.log("TEST SIGNAL CREATED");
+  return;
+}
     if (!analysis) return;
 
     const now = Date.now();
