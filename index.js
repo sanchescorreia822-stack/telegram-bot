@@ -1,32 +1,31 @@
 const TelegramBot = require("node-telegram-bot-api");
 
+const { startSignalGenerator } = require("./signalGenerator");
 const { startResultChecker } = require("./resultChecker");
-const { addPendingSignal } = require("./history");
+const { getStats } = require("./stats");
 
-// 🔥 CONFIG (Render / .env)
 const TOKEN = process.env.TELEGRAM_TOKEN;
-const CHAT_ID = process.env.CHAT_ID;
 
-// 🔥 CRIAR BOT
+if (!TOKEN) throw new Error("❌ Missing TOKEN");
+
 const bot = new TelegramBot(TOKEN, { polling: true });
 
-// 🔥 GLOBAL (para outros ficheiros usarem)
-global.bot = bot;
-global.chatId = CHAT_ID;
-
-// 🔥 TESTE /START
+// 🔥 start
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, "🤖 Bot ativo com sucesso!");
+  bot.sendMessage(msg.chat.id, "🚀 Bot PRO ativo");
 });
 
-// 🔥 TESTE SINAL
-bot.onText(/\/test/, () => {
-  addPendingSignal("blue");
+// 📊 stats real
+bot.onText(/\/stats/, (msg) => {
+  const s = getStats();
 
-  bot.sendMessage(CHAT_ID, "📡 SINAL TESTE: BLUE");
+  bot.sendMessage(
+    msg.chat.id,
+    `📊 STATS\n\nWins: ${s.wins}\nLosses: ${s.losses}\nWin Rate: ${s.winRate}%`
+  );
 });
 
-// 🔥 INICIAR SISTEMA DE RESULTADOS
+startSignalGenerator();
 startResultChecker();
 
-console.log("🚀 BOT INICIADO COM SUCESSO");
+console.log("🚀 SYSTEM PRO RUNNING");

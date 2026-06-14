@@ -1,44 +1,32 @@
-const { loadHistory, resolveSignal } = require("./history");
-const { sendSignal } = require("./telegram");
+const { loadHistory, saveHistory } = require("./history");
+const { CHECK_INTERVAL } = require("./config");
 
-let isRunning = false;
+// 🔥 substitui isto depois por API real
+function getRealResult() {
+  return Math.random() > 0.5 ? "blue" : "red";
+}
 
 function startResultChecker() {
-  setInterval(async () => {
-    if (isRunning) return;
-    isRunning = true;
+  setInterval(() => {
+    const history = loadHistory();
 
-    try {
-      const history = loadHistory();
+    const index = history.findIndex(h => h.status === "PENDING");
 
-      const pendingSignals = history
-        .map((h, index) => ({ ...h, index }))
-        .filter(h => h.status === "PENDING");
+    if (index === -1) return;
 
-      if (pendingSignals.length === 0) {
-        isRunning = false;
-        return;
-      }
+    const result = getRealResult();
 
-      // 🔥 RESULTADO SIMULADO (temporário)
-      const actualResult = Math.random() > 0.5 ? "blue" : "red";
+    const item = history[index];
 
-  for (const signal of pendingSignals) {
-  resolveSignal(signal.index, actualResult);
+    item.result = result;
+    item.status = "DONE";
+    item.win = item.signal === result;
 
-  sendSignal({
-    signal: actualResult,
-    confidence: 85
-  });
+    saveHistory(history);
 
-  console.log("📊 Resultado atualizado:", actualResult);
-}
-    } catch (err) {
-      console.log("RESULT CHECK ERROR:", err);
-    } finally {
-      isRunning = false;
-    }
-  }, 10000);
+    console.log("📊 CLOSED:", item);
+
+  }, CHECK_INTERVAL);
 }
 
 module.exports = { startResultChecker };
