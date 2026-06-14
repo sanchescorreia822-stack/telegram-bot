@@ -1,0 +1,5 @@
+module.exports = {
+  CHECK_INTERVAL: 30000,
+  SIGNAL_INTERVAL: 60000,
+  MIN_HISTORY: 10
+};
