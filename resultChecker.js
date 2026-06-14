@@ -1,32 +1,32 @@
+const { getGameState } = require("./footballStudioService");
 const { loadHistory, saveHistory } = require("./history");
-const { CHECK_INTERVAL } = require("./config");
 
-// 🔥 substitui isto depois por API real
-function getRealResult() {
-  return Math.random() > 0.5 ? "blue" : "red";
-}
+const { sendSignal } = require("./telegram");
+let lastCheckedRound = null;
 
 function startResultChecker() {
-  setInterval(() => {
+  setInterval(async () => {
+    const state = await getGameState();
+    if (!state) return;
+
+    if (state.round === lastCheckedRound) return;
+
+    lastCheckedRound = state.round;
+
     const history = loadHistory();
+    const pending = history.find(h => h.status === "PENDING");
 
-    const index = history.findIndex(h => h.status === "PENDING");
+    if (!pending) return;
+    pending.result = state.result;
+    pending.status = "DONE";
+    pending.win = pending.signal === state.result;
 
-    if (index === -1) return;
+   saveHistory(history);
 
-    const result = getRealResult();
+   sendSignal({
+  signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
+  confidence: pending.confidence || 0
+});
 
-    const item = history[index];
-
-    item.result = result;
-    item.status = "DONE";
-    item.win = item.signal === result;
-
-    saveHistory(history);
-
-    console.log("📊 CLOSED:", item);
-
-  }, CHECK_INTERVAL);
-}
-
-module.exports = { startResultChecker };
+console.log("📊 CLOSED REAL:", pending);
+    module.exports = { startResultChecker };
