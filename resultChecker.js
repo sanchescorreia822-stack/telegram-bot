@@ -14,7 +14,9 @@ function startResultChecker() {
 });
 
 const state = await getResult();
-    if (!state || !state.round || !state.result) return;
+ console.log("STATE DEBUG:", state);  
+ 
+if (!state || !state.round || !state.result) return;
 
     if (state.round === lastCheckedRound) return;
     lastCheckedRound = state.round;
