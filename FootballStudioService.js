@@ -1,5 +1,8 @@
 module.exports = {
-  getResult: () => {
-    return null;
+  getResult: async () => {
+    return {
+      round: Date.now(),
+      result: Math.random() > 0.5 ? "red" : "blue"
+    };
   }
 };
