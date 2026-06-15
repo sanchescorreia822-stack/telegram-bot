@@ -1,8 +1,9 @@
 const { loadHistory, saveHistory } = require("./history");
 const { sendSignal } = require("./telegram");
 
-const { getGameState } = require("./footballStudioServer");
+const { getResult } = require("./FootballStudioService");
 
+console.log("SERVICE:", require("./FootballStudioService"));
 let lastCheckedRound = null;
 
 function startResultChecker() {
