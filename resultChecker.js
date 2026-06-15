@@ -1,12 +1,13 @@
-const { getGameState } = require("./footballStudioService");
 const { loadHistory, saveHistory } = require("./history");
 const { sendSignal } = require("./telegram");
+
+const { getGameState } = require("./footballStudioServer");
 
 let lastCheckedRound = null;
 
 function startResultChecker() {
   setInterval(async () => {
-    const state = await getGameState();
+    const state = await getResult();
     if (!state || !state.round || !state.result) return;
 
     if (state.round === lastCheckedRound) return;
