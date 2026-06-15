@@ -21,9 +21,8 @@ async function sendSignal({ signal, confidence }) {
         text: message
       }
     );
-  } catch (err) {
-    console.log("Erro Telegram:", err.message);
-  }
+  catch (err) {
+  console.log("Erro Telegram FULL:", err.response?.data || err.message);
 }
 
 module.exports = { sendSignal };
