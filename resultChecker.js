@@ -9,35 +9,37 @@ let lastCheckedRound = null;
 function startResultChecker() {
   
 setInterval(async () => {
+const state = await getResult();
 
-  const state = await getResult();
- 
-  if (!state || !state.round || !state.result) return;
-
-  ...
-
-    if (state.round === lastCheckedRound) return;
+if (!state || !state.round || !state.result) return;
+  
     lastCheckedRound = state.round;
 
-    const history = loadHistory();
-    const pending = history.find(h => h.status === "PENDING");
+    setInterval(async () => {
+  const state = await getResult();
 
-    if (!pending) return;
+  if (!state || !state.round || !state.result) return;
 
-    pending.result = state.result;
-    pending.status = "DONE";
-    pending.win = pending.signal === state.result;
+  if (state.round === lastCheckedRound) return;
+  lastCheckedRound = state.round;
 
-    saveHistory(history);
+  const history = loadHistory();
+  const pending = history.find(h => h.status === "PENDING");
 
-    sendSignal({
-      signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
-      confidence: pending.confidence || 0
-    });
+  if (!pending) return;
 
-    console.log("📊 CLOSED REAL:", pending);
+  pending.result = state.result;
+  pending.status = "DONE";
+  pending.win = pending.signal === state.result;
 
-  }, 5000);
-}
+  saveHistory(history);
 
+  sendSignal({
+    signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
+    confidence: pending.confidence || 0
+  });
+
+  console.log("📊 CLOSED REAL:", pending);
+
+}, 5000);
 module.exports = { startResultChecker };
