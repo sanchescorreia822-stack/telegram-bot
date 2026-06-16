@@ -11,8 +11,7 @@ function startResultChecker() {
 setInterval(async () => {
 
   const state = await getResult();
-  console.log("STATE DEBUG:", state);
-
+ 
   if (!state || !state.round || !state.result) return;
 
   ...
