@@ -1,14 +1,19 @@
-const express = require("express");
-const { startBot } = require("./bot");
+const TelegramBot = require("node-telegram-bot-api");
+
+const { startSignalGenerator } = require("./signalGenerator");
 const { startResultChecker } = require("./resultChecker");
 
-const app = express();
+const TOKEN = process.env.TELEGRAM_TOKEN;
 
-app.get("/", (req, res) => {
-  res.send("Bot automático ativo");
+if (!TOKEN) throw new Error("Missing TELEGRAM_TOKEN");
+
+const bot = new TelegramBot(TOKEN, { polling: true });
+
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, "🚀 Bot ativo");
 });
 
-startBot();
-startResultChecker();
+console.log("🚀 SYSTEM RUNNING");
 
-app.listen(process.env.PORT || 3000);
+startSignalGenerator();
+startResultChecker();
