@@ -1,19 +1,19 @@
-const { getGameState } = require("./footballStudioService");
+const { getResult } = require("./FootballStudioService");
 const { addPendingSignal } = require("./history");
 
 let lastRound = null;
 
 async function generateSignal() {
-  const data = await getGameState();
+  const state = await getResult();
 
-  if (!data) return;
+  if (!state) return;
 
-  // 🔥 evita duplicação por round
-  if (data.round === lastRound) return;
+  // evita duplicação por round
+  if (state.round === lastRound) return;
 
-  lastRound = data.round;
+  lastRound = state.round;
 
-  const result = data.prediction || data.signal;
+  const result = state.result || state.prediction || state.signal;
 
   if (!result) return;
 
@@ -23,7 +23,7 @@ async function generateSignal() {
 }
 
 function startSignalGenerator() {
-  setInterval(generateSignal, 5000); // rápido porque jogo é live
+  setInterval(generateSignal, 5000);
 }
 
 module.exports = { startSignalGenerator };

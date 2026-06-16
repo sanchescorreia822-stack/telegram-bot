@@ -3,7 +3,7 @@ const axios = require("axios");
 // 🔥 COLOCA AQUI O LINK REAL DO WINWIN / FOOTBALL STUDIO
 const URL = "COLOCA_AQUI_O_ENDPOINT";
 
-async function getGameState() {
+async function getResult() {
   try {
     const res = await axios.get(URL);
 
@@ -14,4 +14,4 @@ async function getGameState() {
   }
 }
 
-module.exports = { getGameState };
+module.exports = { getResult };
