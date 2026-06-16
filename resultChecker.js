@@ -7,16 +7,15 @@ console.log("SERVICE:", require("./FootballStudioService"));
 let lastCheckedRound = null;
 
 function startResultChecker() {
-  setInterval(async () => {
-    sendSignal({
-  signal: "TESTE",
-  confidence: 100
-});
+  
+setInterval(async () => {
 
-const state = await getResult();
- console.log("STATE DEBUG:", state);  
- 
-if (!state || !state.round || !state.result) return;
+  const state = await getResult();
+  console.log("STATE DEBUG:", state);
+
+  if (!state || !state.round || !state.result) return;
+
+  ...
 
     if (state.round === lastCheckedRound) return;
     lastCheckedRound = state.round;
