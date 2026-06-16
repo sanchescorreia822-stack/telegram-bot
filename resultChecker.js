@@ -1,45 +1,40 @@
 const { loadHistory, saveHistory } = require("./history");
 const { sendSignal } = require("./telegram");
-
 const { getResult } = require("./FootballStudioService");
 
 console.log("SERVICE:", require("./FootballStudioService"));
+
 let lastCheckedRound = null;
 
 function startResultChecker() {
-  
-setInterval(async () => {
-const state = await getResult();
+  setInterval(async () => {
+    const state = await getResult();
 
-if (!state || !state.round || !state.result) return;
-  
+    if (!state || !state.round || !state.result) return;
+
+    // evita repetir a mesma ronda
+    if (state.round === lastCheckedRound) return;
     lastCheckedRound = state.round;
 
-    setInterval(async () => {
-  const state = await getResult();
+    const history = loadHistory();
+    const pending = history.find(h => h.status === "PENDING");
 
-  if (!state || !state.round || !state.result) return;
+    if (!pending) return;
 
-  if (state.round === lastCheckedRound) return;
-  lastCheckedRound = state.round;
+    pending.result = state.result;
+    pending.status = "DONE";
+    pending.win = pending.signal === state.result;
 
-  const history = loadHistory();
-  const pending = history.find(h => h.status === "PENDING");
+    saveHistory(history);
 
-  if (!pending) return;
+    sendSignal({
+      signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
+      confidence: pending.confidence || 0
+    });
 
-  pending.result = state.result;
-  pending.status = "DONE";
-  pending.win = pending.signal === state.result;
+    console.log("📊 CLOSED REAL:", pending);
 
-  saveHistory(history);
+  }, 5000);
+}
 
-  sendSignal({
-    signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
-    confidence: pending.confidence || 0
-  });
-
-  console.log("📊 CLOSED REAL:", pending);
-
-}, 5000);
 module.exports = { startResultChecker };
