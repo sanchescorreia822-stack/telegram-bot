@@ -1,5 +1,5 @@
-let lastCheckedRound = null;
 let running = false;
+let lastCheckedRound = null;
 
 function startResultChecker() {
   setInterval(async () => {
@@ -9,22 +9,15 @@ function startResultChecker() {
     try {
       const state = await getResult();
 
-      if (!state || !state.round || !state.result) return;
+      if (!state?.round || !state?.result) return;
 
       if (state.round === lastCheckedRound) return;
       lastCheckedRound = state.round;
 
       const history = loadHistory();
 
-      // pega o último PENDING (mais seguro que find)
-      const pendingIndex = history
-        .map((h, i) => ({ ...h, i }))
-        .filter(h => h.status === "PENDING")
-        .pop();
-
-      if (!pendingIndex) return;
-
-      const pending = history[pendingIndex.i];
+      const pending = history.find(h => h.status === "PENDING");
+      if (!pending) return;
 
       pending.result = state.result;
       pending.status = "DONE";
@@ -34,11 +27,13 @@ function startResultChecker() {
 
       sendSignal({
         signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
-        confidence: pending.confidence || 0
+        confidence: 80
       });
 
-      console.log("📊 CLOSED REAL:", pending);
+      console.log("✔ FECHADO:", pending);
 
+    } catch (err) {
+      console.log("ERROR:", err.message);
     } finally {
       running = false;
     }

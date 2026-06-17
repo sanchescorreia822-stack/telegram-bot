@@ -1,5 +1,13 @@
 const TelegramBot = require("node-telegram-bot-api");
 
+process.on("uncaughtException", (err) => {
+  console.log("❌ ERROR:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.log("❌ PROMISE ERROR:", err);
+});
+
 const { startSignalGenerator } = require("./signalGenerator");
 const { startResultChecker } = require("./resultChecker");
 
