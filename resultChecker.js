@@ -1,40 +1,47 @@
-const { loadHistory, saveHistory } = require("./history");
-const { sendSignal } = require("./telegram");
-const { getResult } = require("./FootballStudioService");
-
-console.log("SERVICE:", require("./FootballStudioService"));
-
 let lastCheckedRound = null;
+let running = false;
 
 function startResultChecker() {
   setInterval(async () => {
-    const state = await getResult();
+    if (running) return;
+    running = true;
 
-    if (!state || !state.round || !state.result) return;
+    try {
+      const state = await getResult();
 
-    // evita repetir a mesma ronda
-    if (state.round === lastCheckedRound) return;
-    lastCheckedRound = state.round;
+      if (!state || !state.round || !state.result) return;
 
-    const history = loadHistory();
-    const pending = history.find(h => h.status === "PENDING");
+      if (state.round === lastCheckedRound) return;
+      lastCheckedRound = state.round;
 
-    if (!pending) return;
+      const history = loadHistory();
 
-    pending.result = state.result;
-    pending.status = "DONE";
-    pending.win = pending.signal === state.result;
+      // pega o último PENDING (mais seguro que find)
+      const pendingIndex = history
+        .map((h, i) => ({ ...h, i }))
+        .filter(h => h.status === "PENDING")
+        .pop();
 
-    saveHistory(history);
+      if (!pendingIndex) return;
 
-    sendSignal({
-      signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
-      confidence: pending.confidence || 0
-    });
+      const pending = history[pendingIndex.i];
 
-    console.log("📊 CLOSED REAL:", pending);
+      pending.result = state.result;
+      pending.status = "DONE";
+      pending.win = pending.signal === state.result;
+
+      saveHistory(history);
+
+      sendSignal({
+        signal: `Resultado: ${state.result} | ${pending.win ? "WIN ✅" : "LOSS ❌"}`,
+        confidence: pending.confidence || 0
+      });
+
+      console.log("📊 CLOSED REAL:", pending);
+
+    } finally {
+      running = false;
+    }
 
   }, 5000);
 }
-
-module.exports = { startResultChecker };
