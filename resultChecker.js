@@ -31,12 +31,21 @@ function startResultChecker() {
       });
 
       console.log("✔ FECHADO:", pending);
+   setInterval(async () => {
+      if (running) return;
+     running = true;
 
-    } catch (err) {
-      console.log("ERROR:", err.message);
-    } finally {
-      running = false;
-    }
+  console.log("🔄 checking...");
 
-  }, 5000);
-}
+  try {
+    const state = await getResult();
+    console.log("STATE:", state);
+
+    if (!state) return;
+
+  } finally {
+    running = false;
+  }
+
+}, 5000);
+    
